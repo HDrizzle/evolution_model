@@ -1,0 +1,77 @@
+<!--
+   index.html
+   
+   Copyright 2022 Hadrian Ward <hadrian.f.ward@gmail.com>
+   
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+   MA 02110-1301, USA.
+   
+   
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<title>Machine Learning Evolution Battle</title>
+	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+	<meta name="generator" content="Geany 1.37.1" />
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	<script type="text/javascript" src="main.js"></script>
+	<script type="text/javascript" src="/_weblib/js/extras.js"></script>
+	<script type="text/javascript" src="/_weblib/js/geometry.js"></script>
+	<link rel="stylesheet" type="text/css" href="/_weblib/css/styles.css">
+</head>
+
+<body>
+	<div class="headline">
+		<h1>Machine Learning Evolution Battle</h1>
+		<noscript>This website uses JavaScript to function and will not work without it, JavaScript is currently disabled on your browser.</noscript>
+		<div style="font-size: 1.2em;">Since this IP address may be changed, it is advised to bookmark/share this site as <a href="http://tinyurl.com/predatorvsprey">tinyurl.com/predatorvsprey</a>.</div>
+	</div>
+	<a href="/about"><h3>Documentation</h3></a>
+	<div>
+		<span id="entity-types-load-status"></span>
+		<span id="update-status"></span>
+	</div>
+	<div>
+		<div>
+			<pre id="entity-count"></pre>
+		</div>
+		<div>
+			<canvas style="display: inline-block; border: 1px solid #000000;" id="main-canvas" width="800" height="800" style="border:1px solid #000000;"></canvas>
+			<div style="display: inline-block; position: absolute;">
+				<pre id="entity-details"></pre>
+			</div>
+		</div>
+	</div>
+	<div>
+		<h2>Server stats</h2>
+		<div>
+			FPS:<code style="margin-left: 10px; font-size: 1.2em;" id="server-fps"></code>
+		</div>
+		<div hidden>
+			Time usage by task
+			<pre id="server-performance"></pre>
+		</div>
+	</div>
+	<div align="center">
+		<img style="width: 225px; height: 125px;" src="https://findvectorlogo.com/wp-content/uploads/2019/04/powered-by-raspberry-pi-vector-logo.png"></img>
+		<img style="width: 250px; height: 125px;" src="https://www.rust-lang.org/static/images/rust-social-wide.jpg"></img>
+	</div>
+</body>
+
+</html>

@@ -1,0 +1,68 @@
+<!--
+   index.html
+   
+   Copyright 2022 Hadrian Ward <hadrian.f.ward@gmail.com>
+   
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+   MA 02110-1301, USA.
+   
+   
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<title>Machine Learning Evolution Battle</title>
+	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+	<meta name="generator" content="Geany 1.37.1" />
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	<script type="text/javascript" src="/about/main.js"></script>
+	<script type="text/javascript" src="/_weblib/js/extras.js"></script>
+	<link rel="stylesheet" type="text/css" href="/_weblib/css/styles.css">
+</head>
+
+<body>
+	<div class="headline">
+		<h1>Machine Learning Evolution Battle</h1>
+		<noscript>This website uses JavaScript to function and will not work without it, JavaScript is currently disabled on your browser.</noscript>
+		<div style="font-size: 1.2em;">Since this IP address may be changed, it is advised to bookmark/share this site as <a href="http://tinyurl.com/predatorvsprey">tinyurl.com/predatorvsprey</a>.</div>
+	</div>
+	<div>
+		<h2>Description</h2>
+		<p>
+			This is a simulation of natural selection using Neural Networks with <spen style="color: #FF0000;">Predator</spen>, and <spen style="color: #00FF00;">Prey</spen> entities. I was inspired by <a href="https://www.youtube.com/watch?v=qwrp3lB-jkQ">This Youtube video</a>.
+			An entity's field of vision is divided up into "bins" where each vision bin corresponds to an NN input ("sensory inputs" to their "brain"). Vision input activations are determined by the ratio of the distance from the closest entity in that bin to the max vision range.
+			Clicking on an entity will show its field of vision.
+		</p>
+	</div>
+	<div>
+		<h2>Rules</h2>
+		<p>
+			Prey will live indefinitely unless eaten by a Predator, after a specified amount of time staying alive they are able to reproduce (meaning the simulation will copy it, I'm to lasy to implement sexual reproduction).
+			Predators lose health over time and faster when they move, when they eat a prey they're health goes up and they can reproduce (same as prey). Whenever an entity is reproduced it's offspring's NN is randomly modified to simulate genetic mutation.
+		</p>
+	</div>
+	<div>
+		<h2>Neural Networks</h2>
+		<p>
+			A Neural Network (NN) is basically an entity's brain with nodes "Neurons" and connections "Synopsis" (<a href="https://www.3blue1brown.com/lessons/neural-networks">This is a pretty good explanation</a>). There are input nodes corresponding to vision bins and output nodes corresponding to movement (speed, angular speed), there are no hidden layers.
+			Nodes have a bias and activation function and Connections have a weight and dynamic weight. All of these variables control how the NN "thinks" and are randomly changed when an entity is copied/reproduced.
+		</p>
+	</div>
+</body>
+
+</html>

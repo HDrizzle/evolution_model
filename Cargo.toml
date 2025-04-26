@@ -1,0 +1,19 @@
+[package]
+name = "evolution_model"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hyper = "0.12"
+futures = "0.1"
+#strum = "0.17.1"# https://stackoverflow.com/questions/21371534
+#strum_macros = "0.17.1"
+#chrono = "0.4.23"
+serde = {version = "1.0.152", features = ["derive"]}# https://stackoverflow.com/questions/60113832/rust-says-import-is-not-used-and-cant-find-imported-statements-at-the-same-time
+serde_json = "1.0.93"
+nn = {path = "../nn"}
+get_config = {path = "../get_config"}
+vectors2d = {path = "../vectors2d"}
+extras = {path = "../extras"}

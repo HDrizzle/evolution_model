@@ -1,0 +1,42 @@
+{ "entity_types": {
+    "prey": {
+      "nn_input_size": 8,
+      "endurance": 500,
+      "speed": 53,
+      "rotation": 160,
+      "nn_input": [ "vision predator" ],
+      "color": [ 0, 255, 0 ],
+      "radius": 6,
+      "vision": 360,
+      "vision_range": 180,
+      "vision_bins": 8,
+      "health_gain": 0.0,
+      "special": {},
+      "population": [ 20, 100 ],
+      "reproduction_time": 8
+    },
+    "predator": {
+      "nn_input_size": 8,
+      "endurance": 2000,
+      "speed": 50,
+      "rotation": 90,
+      "nn_input": [ "vision prey" ],
+      "color": [ 255, 0, 0 ],
+      "radius": 6,
+      "vision": 80,
+      "vision_range": 250,
+      "vision_bins": 8,
+      "health_gain": -0.018,
+      "special": {
+        "digestion": 0.2,
+        "eat_health_gain": 0.25
+      },
+      "population": [ 20, 100 ],
+      "reproduction_time": 1
+    }
+  },
+  "edge_kill": false,
+  "mutation": 0.02,
+  "inactivity_reset_time": 30,
+  "enable_dynamic_settings": false
+}
