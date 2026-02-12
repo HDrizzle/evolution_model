@@ -1,0 +1,353 @@
+// Lab 1 microwave timer
+// Hadrian Ward
+// scp "C:\Users\hfward\lab_1_timer\lab_1_timer.srcs\sources_1\new\lab_1_verilog.v" hward@142.0.97.104:/home/hward/rust/evolution_model/http
+
+module down_counter(
+	input [7:0] sw,
+	input load_sw,// Active high, read on +edge
+	input clk_en,// Active high
+	input clk,
+	output done,
+	output reg [7:0] count
+	);
+
+	assign done = (count == 8'b0);
+	
+	always @ (posedge clk) begin
+		if(load_sw == 1'b1)
+			count <= sw;
+		else begin
+			if(clk_en)
+				count <= count - 1;
+		end
+	end
+endmodule
+
+module clk_divider(
+	input clk,// 100 MHz
+	output down_counter_enable,// Enable the down counter once per second
+	output led_driver_enable,// When lower 17 bits are zero (763 Hz)
+	output debouncer_enable// When lower 22 bits are zero (24 Hz)
+	);
+
+	parameter [26:0] MAX_COUNT = 100000000;
+	reg [26:0] counter;// 27 bits needed for 100 million
+	assign down_counter_enable = (counter == 27'b0) ? 1'b1 : 1'b0;
+	assign led_driver_enable = (counter[16:0] == 17'b0) ? 1'b1 : 1'b0;
+	assign debouncer_enable = (counter[21:0] == 22'b0) ? 1'b1 : 1'b0;
+
+	always @ (posedge clk) begin
+		counter <= counter + 1;
+		if(counter == MAX_COUNT) begin
+			counter <= 27'b0;
+		end
+	end
+endmodule
+
+module debouncer(
+	input clk,
+	input clk_en,
+	input button,
+	output reg button_state
+	);
+
+	always @ (posedge clk) begin
+		if(clk_en == 1'b1) begin
+			button_state <= button;
+		end
+	end
+endmodule
+
+// Flash the LEDs (not 7-segment) when timer reaches zero
+module led_flasher(
+	input clk,
+	input clk_en,
+	input start,// This signal is controlled by the main timing so 100 MHz clock
+	output reg [15:0] leds
+	);
+
+	reg [7:0] count;
+
+	always @ (posedge clk) begin
+		if(start) begin
+			count <= 8'b0;
+			leds <= 16'b0000111100001111;// Pattern that gets shifted 64 times to look coool
+		end
+		if(clk_en && !(count == 8'd64)) begin
+			leds <= {leds[0], leds[15:1]};// Shift
+			count <= count + 8'b1;
+		end
+	end
+endmodule
+
+// 7-segment LED multiplexer
+// Help from https://www.fpga4student.com/2017/09/seven-segment-led-display-controller-basys3-fpga.html
+module numeric_leds_multiplexer(
+	input clk,
+	input clk_en,
+	input [2:0] hundreds,
+	input [2:0] tens,
+	input [2:0] units,
+	output reg [2:0] anodes,// 3 digits, 0=units, 1=tens, 2=hundreds
+	output reg [6:0] cathodes// 7 segments per digit
+	);
+
+	reg [1:0] digit_activation;// 0, 1, 2
+	reg [2:0] current_displayed_bcd;
+
+	// Assign cathodes
+	always @ (*) begin
+		case(current_displayed_bcd)
+			4'b0000: cathodes <= 7'b0000001; // "0"
+			4'b0001: cathodes <= 7'b1001111; // "1"
+			4'b0010: cathodes <= 7'b0010010; // "2"
+			4'b0011: cathodes <= 7'b0000110; // "3"
+			4'b0100: cathodes <= 7'b1001100; // "4"
+			4'b0101: cathodes <= 7'b0100100; // "5"
+			4'b0110: cathodes <= 7'b0100000; // "6"
+			4'b0111: cathodes <= 7'b0001111; // "7"
+			4'b1000: cathodes <= 7'b0000000; // "8"
+			4'b1001: cathodes <= 7'b0000100; // "9"
+			default: cathodes <= 7'b0000001; // "0"
+		endcase
+	end
+
+	// Assign anodes
+	always @ (*) begin
+		case(digit_activation)
+			2'b0: begin// Units
+				anodes <= 3'b001;
+				current_displayed_bcd <= units;
+			end
+			2'b1: begin// Tens
+				anodes <= 3'b010;
+				current_displayed_bcd <= tens;
+			end
+			2'b10: begin// Hundreds
+				anodes <= 3'b100;
+				current_displayed_bcd <= hundreds;
+			end
+		endcase
+	end
+
+	// Increment digit counter
+	always @ (posedge clk) begin
+		if(clk_en) begin
+			digit_activation <= digit_activation + 2'b1;
+		end
+		if(digit_activation == 2'b11) begin
+			digit_activation <= 2'b0;
+		end
+	end
+endmodule
+
+// Uses double dabble algorithm: https://en.wikipedia.org/wiki/Double_dabble
+module byte_to_bcd(
+	input clk,
+	input start_conversion,
+	input [7:0] binary_in,
+	output reg [2:0] hundreds,
+	output reg [2:0] tens,
+	output reg [2:0] units
+	);
+	
+	// [19:16] Hundreds, [15:12] Tens, [11:8] Units, [7:0] Original binary
+	reg [19:0] scratch_space;
+	reg [3:0] cycles;
+	reg [1:0] curr_state;
+	reg [1:0] next_state;
+	
+	// State machine
+	parameter STATE_IDLE = 2'b0;
+	parameter STATE_SHIFT = 2'b1;
+	parameter STATE_ADD = 2'b10;
+
+	// Synchronous state update
+	always @ (posedge clk) begin
+	   curr_state <= next_state;
+    end
+    
+    // Combinational state update
+    always @ (*) begin
+        case(curr_state)
+            STATE_IDLE: begin
+                if(start_conversion) begin
+                    // Set state
+                    next_state <= STATE_SHIFT;
+                    // Init stuff
+                    scratch_space <= {12'b0, binary_in};
+                    cycles <= 4'b0;
+                end
+            end
+            STATE_SHIFT: begin
+                if(btn_edge) begin
+                    next_state <= STATE_COUNTING;
+                end
+            end
+            STATE_ADD: begin
+                if(btn_edge) begin
+                    next_state <= STATE_PAUSED;
+                end
+                if(down_counter_done) begin
+                    next_state <= STATE_WAITING;
+                end
+            end
+        endcase
+    end
+endmodule
+
+module central_timing(
+	input btn_r,// Right button
+	input clk,// 100 MHz
+	input down_counter_done,
+	input reset,// Active high
+	output load_down_counter,
+	output down_counter_enable
+	);
+	
+	parameter STATE_WAITING = 2'B0;
+	parameter STATE_LOADED = 2'B1;
+	parameter STATE_COUNTING = 2'B10;
+	parameter STATE_PAUSED = 2'B11;
+	
+	// 0 -> Waiting for user to enter time with switches
+	// 1 -> User has has pushed button to enter time, waiting for start
+	// 2 -> Counting down, will go back to state 0 when done
+	// 3 -> Paused
+	reg [1:0] curr_state;
+	wire [1:0] next_state;
+	
+	reg [0:0] prev_btn_state;
+	wire btn_edge;
+	
+	always @ (posedge clk) begin
+	   prev_btn_state <= btn_r;
+	end
+	assign btn_edge = (prev_btn_state != btn_r)? 1'b1 : 1'b0;
+	
+	// Synchronous state update
+	always @ (posedge clk) begin
+	   if(reset == 1'b1) begin
+	       curr_state <= 2'b0;
+	   end
+	   else begin
+	       curr_state <= next_state;
+	   end
+    end
+    
+    // Combinational state update
+    always @ (*) begin
+        case(curr_state)
+            STATE_WAITING: begin
+                if(btn_edge) begin
+                    next_state <= STATE_LOADED;
+                end
+            end
+            STATE_LOADED: begin
+                if(btn_edge) begin
+                    next_state <= STATE_COUNTING;
+                end
+            end
+            STATE_COUNTING: begin
+                if(btn_edge) begin
+                    next_state <= STATE_PAUSED;
+                end
+                if(down_counter_done) begin
+                    next_state <= STATE_WAITING;
+                end
+            end
+            STATE_PAUSED: begin
+                if(btn_edge) begin
+                    next_state <= STATE_COUNTING;
+                end
+            end
+        endcase
+    end
+    
+    // Combinational output from  state
+    assign down_counter_enable = (curr_state == STATE_COUNTING)? 1'b1 : 1'b0;
+endmodule
+
+module top_microwave_timer(
+	input [7:0] sw,// Switches
+	input btn_r,// Right button
+	input clk,// 100 MHz
+	output [15:0] leds,
+	output [2:0] an,// 7 segment anodes
+	output [6:0] seg// 7 segment cathodes
+	);
+	
+	// Internal wires
+	wire down_counter_clk_enable;// Enable the down counter once per second
+	wire led_driver_clk_enable;// When lower 17 bits are zero (763 Hz)
+	wire debouncer_clk_enable;
+	wire load_sw;
+	wire counter_done;
+	wire [7:0] counter_value;
+	wire btn_debounced;
+	wire [3:0] bcd_units;
+	wire [3:0] bcd_tens;
+	wire [3:0] bcd_hundreds;
+	wire down_counter_enable;
+	wire down_counter_enable_gated;
+	
+	// Instanciate submodules
+	clk_divider clk_divider_instance(
+		.clk(clk),
+		.down_counter_enable(down_counter_clk_enable),
+		.led_driver_enable(led_driver_clk_enable),
+		.debouncer_enable(debouncer_clk_enable)
+	);
+	
+	assign down_counter_enable_gated = down_counter_enable & down_counter_clk_enable;
+	down_counter down_counter_instance(
+		.sw(sw),
+		.load_sw(load_sw),// Active high, read on +edge
+		.clk_en(down_counter_clk_enable_gated),// Active high
+		.clk(clk),
+		.done(counter_done),
+		.count(counter_value)
+	);
+	
+	debouncer debouncer_instance(
+		.clk(clk),
+		.clk_en(debouncer_clk_enable),
+		.button(btn_r),
+		.button_state(btn_debounced)
+	);
+	
+	led_flasher led_flasher_instance(
+		.clk(clk),
+		.clk_en(led_driver_clk_enable),
+		.start(counter_done),
+		.leds(leds)
+	);
+	
+	numeric_leds_multiplexer numeric_leds_multiplexer_instance(
+		.clk(clk),
+		.clk_en(led_driver_clk_enable),
+		.hundreds(bcd_hundreds),
+		.tens(bcd_tens),
+		.units(bcd_units),
+		.anodes(an),// 3 digits, 0=units, 1=tens, 2=hundreds
+		.cathodes(seg)// 7 segments per digit
+	);
+	
+	byte_to_bcd byte_to_bcd_instance(
+		.clk(clk),
+		.start_conversion(down_counter_enable),
+		.binary_in(counter_value),
+		.hundreds(bcd_hundreds),
+		.tens(bcd_tens),
+		.units(bcd_units)
+	);
+	
+	central_timing central_timing_instance(
+		.btn_r(btn_debounced),// Right button
+		.clk(clk),// 100 MHz
+		.down_counter_done(counter_done),
+		.load_down_counter(load_sw),
+		.down_counter_enable(down_counter_enable)
+	);
+	
+endmodule
